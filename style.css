@@ -6,6 +6,7 @@ body {
   color: #1a1a2e;
   font-size: 15px;
   line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
 }
 
 /* ── Logo ─────────────────────────────── */
@@ -17,6 +18,7 @@ body {
   padding: 5px 14px;
   border-radius: 20px;
   letter-spacing: 0.03em;
+  white-space: nowrap;
 }
 
 /* ── Auth page ────────────────────────── */
@@ -25,6 +27,8 @@ body {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  min-height: 100dvh;
+  padding: 1rem;
 }
 
 .auth-card {
@@ -41,60 +45,70 @@ body {
 
 .tab-row { display: flex; gap: 8px; margin-bottom: 1.25rem; }
 .tab {
-  flex: 1; padding: 8px; border: 1px solid #e2e8f0;
+  flex: 1; padding: 10px; border: 1px solid #e2e8f0;
   border-radius: 8px; background: transparent;
-  font-size: 14px; cursor: pointer; color: #64748b;
-  transition: all 0.15s;
+  font-size: 15px; cursor: pointer; color: #64748b;
+  transition: all 0.15s; -webkit-tap-highlight-color: transparent;
 }
 .tab.active { background: #185FA5; color: #fff; border-color: #185FA5; }
 
 /* ── Dashboard page ───────────────────── */
-.dashboard-page { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+.dashboard-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem;
+}
 
+/* ── Topbar ───────────────────────────── */
 .topbar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 1.5rem;
+  gap: 8px;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
 }
-.topbar-title { flex: 1; font-size: 15px; color: #64748b; }
+.topbar-title {
+  flex: 1;
+  font-size: 14px;
+  color: #64748b;
+  min-width: 0;
+}
 
 /* ── Metrics ──────────────────────────── */
 .metrics {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 1.5rem;
+  gap: 10px;
+  margin-bottom: 1.25rem;
 }
 .metric {
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
-  padding: 14px 16px;
+  padding: 12px 14px;
 }
-.metric-label { font-size: 12px; color: #64748b; margin-bottom: 4px; }
-.metric-val { font-size: 24px; font-weight: 600; color: #1a1a2e; }
+.metric-label { font-size: 11px; color: #64748b; margin-bottom: 4px; }
+.metric-val { font-size: 22px; font-weight: 600; color: #1a1a2e; }
 .metric-val.green  { color: #3B6D11; }
 .metric-val.amber  { color: #854F0B; }
 .metric-val.red    { color: #A32D2D; }
 
 /* ── Sections ─────────────────────────── */
-.section { margin-bottom: 2rem; }
+.section { margin-bottom: 1.75rem; }
 .section-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 /* ── Upload form ──────────────────────── */
 .upload-form {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 10px;
-  align-items: flex-end;
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
@@ -103,10 +117,11 @@ body {
 .upload-form select,
 .upload-form input[type="date"],
 .upload-form input[type="file"] {
-  padding: 8px 12px;
+  width: 100%;
+  padding: 10px 12px;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 15px;
   background: #f8fafc;
   color: #1a1a2e;
   outline: none;
@@ -117,8 +132,8 @@ body {
 /* ── Document grid ────────────────────── */
 .doc-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
 }
 .doc-card {
   background: #fff;
@@ -126,16 +141,23 @@ body {
   border-radius: 12px;
   padding: 1rem;
 }
-.doc-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.doc-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  gap: 6px;
+}
 .doc-type { font-size: 13px; font-weight: 600; color: #1a1a2e; }
 .doc-filename { font-size: 12px; color: #64748b; margin-bottom: 4px; word-break: break-all; }
 .doc-expiry { font-size: 11px; color: #94a3b8; margin-bottom: 10px; }
-.doc-actions { display: flex; gap: 8px; margin-top: 10px; }
+.doc-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 
 /* ── Badges ───────────────────────────── */
 .badge {
   font-size: 11px; font-weight: 500;
   padding: 2px 8px; border-radius: 20px;
+  white-space: nowrap;
 }
 .badge-valid    { background: #EAF3DE; color: #3B6D11; }
 .badge-expiring { background: #FAEEDA; color: #854F0B; }
@@ -145,39 +167,52 @@ body {
 .btn-primary {
   background: #185FA5; color: #fff;
   border: none; border-radius: 8px;
-  padding: 9px 20px; font-size: 14px;
+  padding: 12px 20px; font-size: 15px;
   cursor: pointer; font-weight: 500;
   transition: background 0.15s;
+  width: 100%;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 .btn-primary:hover { background: #0C447C; }
+.btn-primary:active { background: #0C447C; }
 
 .btn-outline {
   background: transparent; color: #1a1a2e;
   border: 1px solid #e2e8f0; border-radius: 8px;
-  padding: 7px 16px; font-size: 14px;
+  padding: 8px 14px; font-size: 14px;
   cursor: pointer; transition: background 0.15s;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 .btn-outline:hover { background: #f1f5f9; }
-.btn-outline.small { padding: 4px 10px; font-size: 12px; }
+.btn-outline.small { padding: 6px 10px; font-size: 12px; }
 
 .btn-danger {
   background: #FCEBEB; color: #A32D2D;
   border: 1px solid #F09595; border-radius: 8px;
-  padding: 7px 14px; font-size: 14px;
+  padding: 8px 14px; font-size: 14px;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
-.btn-danger.small { padding: 4px 10px; font-size: 12px; }
+.btn-danger.small { padding: 6px 10px; font-size: 12px; }
 
 /* ── Fields ───────────────────────────── */
 .field { margin-bottom: 1rem; }
 .field label { display: block; font-size: 13px; color: #64748b; margin-bottom: 5px; }
-.field input {
-  width: 100%; padding: 9px 12px;
+.field input,
+.field select {
+  width: 100%; padding: 11px 12px;
   border: 1px solid #e2e8f0; border-radius: 8px;
-  font-size: 14px; background: #f8fafc;
+  font-size: 16px; /* 16px prevents iOS zoom on focus */
+  background: #f8fafc;
   color: #1a1a2e; outline: none;
+  -webkit-appearance: none;
 }
-.field input:focus { border-color: #185FA5; }
+.field input:focus,
+.field select:focus { border-color: #185FA5; }
 
 /* ── Messages ─────────────────────────── */
 .msg { font-size: 13px; margin-top: 10px; }
@@ -186,9 +221,46 @@ body {
 
 .empty-msg { font-size: 14px; color: #94a3b8; }
 
-@media (max-width: 600px) {
+/* ── Mobile — up to 480px (phones) ───── */
+@media (max-width: 480px) {
+  .auth-card { padding: 1.5rem 1.25rem; border-radius: 12px; }
+
   .metrics { grid-template-columns: repeat(2, 1fr); }
+  .metric-val { font-size: 20px; }
+
+  .topbar { gap: 6px; }
+  .topbar-title { font-size: 13px; }
+
+  .doc-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .doc-card { padding: 0.75rem; }
+
+  .btn-primary { padding: 13px 16px; font-size: 16px; }
+  .btn-outline { padding: 8px 10px; font-size: 13px; }
+
+  .section-title { font-size: 11px; }
+}
+
+/* ── Tablet — 481px to 768px ──────────── */
+@media (min-width: 481px) and (max-width: 768px) {
+  .metrics { grid-template-columns: repeat(2, 1fr); }
+  .doc-grid { grid-template-columns: repeat(2, 1fr); }
   .upload-form { flex-direction: column; }
+}
+
+/* ── Desktop — 769px and above ────────── */
+@media (min-width: 769px) {
+  .upload-form {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
   .upload-form select,
-  .upload-form input { width: 100%; }
+  .upload-form input[type="date"],
+  .upload-form input[type="file"] {
+    width: auto;
+    flex: 1;
+  }
+  .btn-primary { width: auto; }
+  .metrics { grid-template-columns: repeat(4, 1fr); }
+  .doc-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 }
