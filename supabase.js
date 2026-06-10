@@ -118,3 +118,4 @@ export async function getEmergencyContact(userId) {
   if (error) return null;
   return data;
 }
+
