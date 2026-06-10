@@ -135,7 +135,7 @@
 
     // ── QR Code ──────────────────────────────────────────
     function showQRCode() {
-      const publicURL = `${window.location.origin}/emergency-public.html?uid=${currentUser.id}`;
+      const publicURL = `https://safe-ride-pied.vercel.app/emergency-public.html?uid=${currentUser.id}`;
       document.getElementById("public-url").textContent = publicURL;
       document.getElementById("qr-banner").style.display = "flex";
       new QRCode(document.getElementById("qr-code"), {
