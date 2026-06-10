@@ -19,7 +19,7 @@
 
   <!-- QR Code banner -->
   <div id="qr-banner" style="display:flex; background:#EAF3DE; border:0.5px solid #639922; border-radius:12px; padding:14px 18px; margin-bottom:1.5rem; display:flex; align-items:center; gap:14px;">
-    <div id="qr-code" style="width:80px; height:80px; flex-shrink:0;"></div>
+    <div id="qr-code" style="width:80px; height:80px; flex-shrink:0; overflow:hidden;"></div>
     <div>
       <div style="font-size:13px; font-weight:600; color:#3B6D11; margin-bottom:4px;">Your public emergency QR code</div>
       <div style="font-size:12px; color:#3B6D11; margin-bottom:6px;">First responders scan this to see your medical info instantly — no login needed</div>
@@ -138,8 +138,13 @@
       const publicURL = `https://safe-ride-pied.vercel.app/emergency-public.html?uid=${currentUser.id}`;
       document.getElementById("public-url").textContent = publicURL;
       document.getElementById("qr-banner").style.display = "flex";
-      new QRCode(document.getElementById("qr-code"), {
-        text: publicURL, width: 80, height: 80
+      const qrContainer = document.getElementById("qr-code");
+      qrContainer.innerHTML = "";
+      new QRCode(qrContainer, {
+        text: publicURL,
+        width: 80,
+        height: 80,
+        correctLevel: QRCode.CorrectLevel.H
       });
     }
 
