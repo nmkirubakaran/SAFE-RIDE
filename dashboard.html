@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SafeRide — Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="dashboard-page">
+
+  <header class="topbar">
+    <span class="logo-pill">SafeRide</span>
+    <span class="topbar-title">Document vault</span>
+    <button class="btn-outline" onclick="handleLogout()">Logout</button>
+  </header>
+
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">Total docs</div><div class="metric-val" id="m-total">0</div></div>
+    <div class="metric"><div class="metric-label">Valid</div><div class="metric-val green" id="m-valid">0</div></div>
+    <div class="metric"><div class="metric-label">Expiring soon</div><div class="metric-val amber" id="m-expiring">0</div></div>
+    <div class="metric"><div class="metric-label">Expired</div><div class="metric-val red" id="m-expired">0</div></div>
+  </div>
+
+  <section class="section">
+    <h2 class="section-title">Upload document</h2>
+    <div class="upload-form">
+      <select id="doc-type">
+        <option value="">Select document type</option>
+        <option value="Driving Licence">Driving licence</option>
+        <option value="RC Book">RC book</option>
+        <option value="Insurance">Insurance</option>
+        <option value="PUC Certificate">PUC certificate</option>
+        <option value="Medical Info">Medical info</option>
+        <option value="Emergency Contact">Emergency contact</option>
+      </select>
+      <input type="date" id="doc-expiry" />
+      <input type="file" id="doc-file" accept=".pdf,.jpg,.jpeg,.png" />
+      <button class="btn-primary" onclick="handleUpload()">Upload</button>
+    </div>
+    <p id="upload-msg" class="msg"></p>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">Your documents</h2>
+    <div id="doc-grid" class="doc-grid">
+      <p class="empty-msg">No documents uploaded yet.</p>
+    </div>
+  </section>
+
+  <script type="module">
+    import { onAuthChange, logoutUser, uploadDocument, getUserDocuments, deleteDocument, getCurrentUser }
+      from "./supabase.js";
+
+    let currentUser = null;
+
+    // Wait for auth then load docs
+    onAuthChange(async user => {
+      if (!user) { window.location.href = "index.html"; return; }
+      currentUser = user;
+      await loadDocuments();
+    });
+
+    window.handleLogout = async () => {
+      await logoutUser();
+      window.location.href = "index.html";
+    };
+
+    window.handleUpload = async () => {
+      const type   = document.getElementById("doc-type").value;
+      const file   = document.getElementById("doc-file").files[0];
+      const expiry = document.getElementById("doc-expiry").value;
+      const msg    = document.getElementById("upload-msg");
+
+      if (!type || !file) {
+        msg.textContent = "Please select a document type and file.";
+        msg.className = "msg error"; return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        msg.textContent = "File too large. Maximum size is 5 MB.";
+        msg.className = "msg error"; return;
+      }
+
+      msg.textContent = "Uploading..."; msg.className = "msg";
+      try {
+        await uploadDocument(currentUser.id, type, file, expiry);
+        msg.textContent = "Uploaded successfully!"; msg.className = "msg success";
+        document.getElementById("doc-file").value   = "";
+        document.getElementById("doc-type").value   = "";
+        document.getElementById("doc-expiry").value = "";
+        await loadDocuments();
+      } catch (e) {
+        msg.textContent = "Upload failed: " + e.message;
+        msg.className = "msg error";
+      }
+    };
+
+    window.handleDelete = async (docId, filePath) => {
+      if (!confirm("Delete this document?")) return;
+      try {
+        await deleteDocument(docId, filePath);
+        await loadDocuments();
+      } catch (e) {
+        alert("Delete failed: " + e.message);
+      }
+    };
+
+    async function loadDocuments() {
+      if (!currentUser) return;
+      const docs  = await getUserDocuments(currentUser.id);
+      const grid  = document.getElementById("doc-grid");
+      const today = new Date();
+      let total = 0, valid = 0, expiring = 0, expired = 0;
+
+      if (!docs || docs.length === 0) {
+        grid.innerHTML = "<p class='empty-msg'>No documents uploaded yet.</p>";
+      } else {
+        grid.innerHTML = docs.map(d => {
+          total++;
+          let badgeClass = "badge-valid", badgeText = "Valid";
+          if (d.expiry_date) {
+            const exp  = new Date(d.expiry_date);
+            const days = Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
+            if (days < 0)        { badgeClass = "badge-expired";  badgeText = "Expired";       expired++;  }
+            else if (days <= 30) { badgeClass = "badge-expiring"; badgeText = days + "d left"; expiring++; }
+            else                 { badgeClass = "badge-valid";    badgeText = "Valid";          valid++;    }
+          } else { valid++; }
+
+          return `
+            <div class="doc-card">
+              <div class="doc-card-top">
+                <span class="doc-type">${d.doc_type}</span>
+                <span class="badge ${badgeClass}">${badgeText}</span>
+              </div>
+              <div class="doc-filename">${d.file_name}</div>
+              ${d.expiry_date ? `<div class="doc-expiry">Expires: ${d.expiry_date}</div>` : ""}
+              <div class="doc-actions">
+                <a href="${d.file_url}" target="_blank" class="btn-outline small">View</a>
+                <button class="btn-danger small" onclick="handleDelete('${d.id}','${d.file_path}')">Delete</button>
+              </div>
+            </div>`;
+        }).join("");
+      }
+
+      document.getElementById("m-total").textContent    = total;
+      document.getElementById("m-valid").textContent    = valid;
+      document.getElementById("m-expiring").textContent = expiring;
+      document.getElementById("m-expired").textContent  = expired;
+    }
+  </script>
+</body>
+</html>

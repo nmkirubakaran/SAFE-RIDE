@@ -1,0 +1,194 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f5f6fa;
+  color: #1a1a2e;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ── Logo ─────────────────────────────── */
+.logo-pill {
+  background: #185FA5;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 20px;
+  letter-spacing: 0.03em;
+}
+
+/* ── Auth page ────────────────────────── */
+.auth-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.auth-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+.auth-logo { text-align: center; margin-bottom: 1.5rem; }
+.auth-logo p { font-size: 13px; color: #64748b; margin-top: 8px; }
+
+.tab-row { display: flex; gap: 8px; margin-bottom: 1.25rem; }
+.tab {
+  flex: 1; padding: 8px; border: 1px solid #e2e8f0;
+  border-radius: 8px; background: transparent;
+  font-size: 14px; cursor: pointer; color: #64748b;
+  transition: all 0.15s;
+}
+.tab.active { background: #185FA5; color: #fff; border-color: #185FA5; }
+
+/* ── Dashboard page ───────────────────── */
+.dashboard-page { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 1.5rem;
+}
+.topbar-title { flex: 1; font-size: 15px; color: #64748b; }
+
+/* ── Metrics ──────────────────────────── */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 1.5rem;
+}
+.metric {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.metric-label { font-size: 12px; color: #64748b; margin-bottom: 4px; }
+.metric-val { font-size: 24px; font-weight: 600; color: #1a1a2e; }
+.metric-val.green  { color: #3B6D11; }
+.metric-val.amber  { color: #854F0B; }
+.metric-val.red    { color: #A32D2D; }
+
+/* ── Sections ─────────────────────────── */
+.section { margin-bottom: 2rem; }
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+/* ── Upload form ──────────────────────── */
+.upload-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+.upload-form select,
+.upload-form input[type="date"],
+.upload-form input[type="file"] {
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #f8fafc;
+  color: #1a1a2e;
+  outline: none;
+}
+.upload-form select:focus,
+.upload-form input:focus { border-color: #185FA5; }
+
+/* ── Document grid ────────────────────── */
+.doc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+}
+.doc-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem;
+}
+.doc-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.doc-type { font-size: 13px; font-weight: 600; color: #1a1a2e; }
+.doc-filename { font-size: 12px; color: #64748b; margin-bottom: 4px; word-break: break-all; }
+.doc-expiry { font-size: 11px; color: #94a3b8; margin-bottom: 10px; }
+.doc-actions { display: flex; gap: 8px; margin-top: 10px; }
+
+/* ── Badges ───────────────────────────── */
+.badge {
+  font-size: 11px; font-weight: 500;
+  padding: 2px 8px; border-radius: 20px;
+}
+.badge-valid    { background: #EAF3DE; color: #3B6D11; }
+.badge-expiring { background: #FAEEDA; color: #854F0B; }
+.badge-expired  { background: #FCEBEB; color: #A32D2D; }
+
+/* ── Buttons ──────────────────────────── */
+.btn-primary {
+  background: #185FA5; color: #fff;
+  border: none; border-radius: 8px;
+  padding: 9px 20px; font-size: 14px;
+  cursor: pointer; font-weight: 500;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: #0C447C; }
+
+.btn-outline {
+  background: transparent; color: #1a1a2e;
+  border: 1px solid #e2e8f0; border-radius: 8px;
+  padding: 7px 16px; font-size: 14px;
+  cursor: pointer; transition: background 0.15s;
+}
+.btn-outline:hover { background: #f1f5f9; }
+.btn-outline.small { padding: 4px 10px; font-size: 12px; }
+
+.btn-danger {
+  background: #FCEBEB; color: #A32D2D;
+  border: 1px solid #F09595; border-radius: 8px;
+  padding: 7px 14px; font-size: 14px;
+  cursor: pointer;
+}
+.btn-danger.small { padding: 4px 10px; font-size: 12px; }
+
+/* ── Fields ───────────────────────────── */
+.field { margin-bottom: 1rem; }
+.field label { display: block; font-size: 13px; color: #64748b; margin-bottom: 5px; }
+.field input {
+  width: 100%; padding: 9px 12px;
+  border: 1px solid #e2e8f0; border-radius: 8px;
+  font-size: 14px; background: #f8fafc;
+  color: #1a1a2e; outline: none;
+}
+.field input:focus { border-color: #185FA5; }
+
+/* ── Messages ─────────────────────────── */
+.msg { font-size: 13px; margin-top: 10px; }
+.msg.error   { color: #A32D2D; }
+.msg.success { color: #3B6D11; }
+
+.empty-msg { font-size: 14px; color: #94a3b8; }
+
+@media (max-width: 600px) {
+  .metrics { grid-template-columns: repeat(2, 1fr); }
+  .upload-form { flex-direction: column; }
+  .upload-form select,
+  .upload-form input { width: 100%; }
+}
