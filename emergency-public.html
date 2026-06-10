@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SafeRide — Emergency Info</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .sos-header { background:#E24B4A; color:#fff; text-align:center; padding:1.25rem; border-radius:12px; margin-bottom:1.5rem; }
+    .sos-header h1 { font-size:22px; font-weight:700; margin-bottom:4px; }
+    .sos-header p  { font-size:13px; opacity:0.9; }
+    .info-card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:1.25rem; margin-bottom:14px; }
+    .info-row  { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:0.5px solid #f1f5f9; }
+    .info-row:last-child { border-bottom:none; }
+    .info-label { font-size:12px; color:#64748b; }
+    .info-value { font-size:14px; font-weight:500; color:#1a1a2e; }
+    .blood-badge { background:#FCEBEB; color:#A32D2D; font-size:20px; font-weight:700; padding:8px 20px; border-radius:8px; }
+    .call-btn { display:block; background:#E24B4A; color:#fff; text-align:center; padding:14px; border-radius:10px; font-size:15px; font-weight:600; text-decoration:none; margin-bottom:10px; }
+    .call-btn:hover { background:#c73c3c; }
+  </style>
+</head>
+<body style="background:#f5f6fa; max-width:480px; margin:0 auto; padding:1.25rem;">
+
+  <div class="sos-header">
+    <h1>🚨 Emergency Info</h1>
+    <p>SafeRide — Rider medical information for first responders</p>
+  </div>
+
+  <div id="loading" style="text-align:center; color:#64748b; padding:2rem;">Loading rider information...</div>
+  <div id="content" style="display:none;">
+
+    <!-- Blood group -->
+    <div class="info-card" style="text-align:center; margin-bottom:14px;">
+      <div style="font-size:12px; color:#64748b; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">Blood group</div>
+      <div class="blood-badge" id="pub-blood">—</div>
+    </div>
+
+    <!-- Medical info -->
+    <div class="info-card">
+      <div style="font-size:13px; font-weight:600; color:#1a1a2e; margin-bottom:10px;">Medical details</div>
+      <div class="info-row"><span class="info-label">Age</span><span class="info-value" id="pub-age">—</span></div>
+      <div class="info-row"><span class="info-label">Allergies</span><span class="info-value" id="pub-allergies">—</span></div>
+      <div class="info-row"><span class="info-label">Conditions</span><span class="info-value" id="pub-conditions">—</span></div>
+      <div class="info-row"><span class="info-label">Medications</span><span class="info-value" id="pub-medications">—</span></div>
+    </div>
+
+    <!-- Emergency contacts -->
+    <div class="info-card">
+      <div style="font-size:13px; font-weight:600; color:#1a1a2e; margin-bottom:10px;">Emergency contacts</div>
+      <div id="pub-contacts"></div>
+    </div>
+
+    <div style="text-align:center; font-size:11px; color:#94a3b8; margin-top:1rem;">
+      Powered by SafeRide Smart Helmet System
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase } from "./supabase.js";
+
+    const uid = new URLSearchParams(window.location.search).get("uid");
+
+    if (!uid) {
+      document.getElementById("loading").textContent = "Invalid emergency link.";
+    } else {
+      loadEmergencyInfo(uid);
+    }
+
+    async function loadEmergencyInfo(userId) {
+      try {
+        const [{ data: med }, { data: contacts }] = await Promise.all([
+          supabase.from("medical_info").select("*").eq("user_id", userId).single(),
+          supabase.from("emergency_contacts").select("*").eq("user_id", userId).order("created_at")
+        ]);
+
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("content").style.display = "block";
+
+        if (med) {
+          document.getElementById("pub-blood").textContent      = med.blood_group || "Unknown";
+          document.getElementById("pub-age").textContent        = med.age ? med.age + " years" : "—";
+          document.getElementById("pub-allergies").textContent  = med.allergies  || "None";
+          document.getElementById("pub-conditions").textContent = med.conditions || "None";
+          document.getElementById("pub-medications").textContent= med.medications|| "None";
+        }
+
+        if (contacts && contacts.length > 0) {
+          document.getElementById("pub-contacts").innerHTML = contacts.map(c => `
+            <a href="tel:${c.phone}" class="call-btn">
+              📞 Call ${c.name} (${c.relation}) — ${c.phone}
+            </a>
+            ${c.phone2 ? `<a href="tel:${c.phone2}" class="call-btn" style="background:#185FA5;">📞 Alternate — ${c.phone2}</a>` : ""}
+          `).join("");
+        } else {
+          document.getElementById("pub-contacts").innerHTML = "<p style='color:#94a3b8; font-size:13px;'>No contacts saved</p>";
+        }
+      } catch(e) {
+        document.getElementById("loading").textContent = "Could not load emergency info.";
+      }
+    }
+  </script>
+</body>
+</html>

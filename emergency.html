@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SafeRide — Emergency Info</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="dashboard-page">
+
+  <header class="topbar">
+    <span class="logo-pill">SafeRide</span>
+    <span class="topbar-title">Emergency info</span>
+    <div style="display:flex; gap:8px;">
+      <a href="dashboard.html" class="btn-outline">Documents</a>
+      <button class="btn-outline" onclick="handleLogout()">Logout</button>
+    </div>
+  </header>
+
+  <!-- QR Code banner -->
+  <div id="qr-banner" style="display:none; background:#EAF3DE; border:0.5px solid #639922; border-radius:12px; padding:14px 18px; margin-bottom:1.5rem; display:flex; align-items:center; gap:14px;">
+    <div id="qr-code" style="width:80px; height:80px; flex-shrink:0;"></div>
+    <div>
+      <div style="font-size:13px; font-weight:600; color:#3B6D11; margin-bottom:4px;">Your public emergency QR code</div>
+      <div style="font-size:12px; color:#3B6D11; margin-bottom:6px;">First responders scan this to see your medical info instantly — no login needed</div>
+      <div id="public-url" style="font-size:11px; font-family:monospace; color:#3B6D11; word-break:break-all;"></div>
+    </div>
+  </div>
+
+  <div class="metrics" style="grid-template-columns: repeat(3,1fr);">
+    <div class="metric">
+      <div class="metric-label">Blood group</div>
+      <div class="metric-val" id="m-blood" style="font-size:20px;">—</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Emergency contacts</div>
+      <div class="metric-val green" id="m-contacts">0</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Medical conditions</div>
+      <div class="metric-val amber" id="m-conditions">0</div>
+    </div>
+  </div>
+
+  <!-- Medical Info Form -->
+  <section class="section">
+    <h2 class="section-title">Medical information</h2>
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:1.25rem;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        <div class="field">
+          <label>Blood group</label>
+          <select id="blood-group" style="width:100%; padding:9px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:14px; background:#f8fafc; color:#1a1a2e; outline:none;">
+            <option value="">Select blood group</option>
+            <option>A+</option><option>A-</option>
+            <option>B+</option><option>B-</option>
+            <option>O+</option><option>O-</option>
+            <option>AB+</option><option>AB-</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Age</label>
+          <input type="number" id="age" placeholder="Your age" style="width:100%" />
+        </div>
+        <div class="field" style="grid-column:span 2;">
+          <label>Known allergies</label>
+          <input type="text" id="allergies" placeholder="e.g. Penicillin, Peanuts, Dust (or None)" style="width:100%" />
+        </div>
+        <div class="field" style="grid-column:span 2;">
+          <label>Medical conditions</label>
+          <input type="text" id="conditions" placeholder="e.g. Diabetes, Asthma (or None)" style="width:100%" />
+        </div>
+        <div class="field" style="grid-column:span 2;">
+          <label>Current medications</label>
+          <input type="text" id="medications" placeholder="e.g. Metformin 500mg (or None)" style="width:100%" />
+        </div>
+      </div>
+      <button class="btn-primary" style="margin-top:8px;" onclick="saveMedicalInfo()">Save medical info</button>
+      <p id="medical-msg" class="msg"></p>
+    </div>
+  </section>
+
+  <!-- Emergency Contacts -->
+  <section class="section">
+    <h2 class="section-title">Emergency contacts</h2>
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:1.25rem; margin-bottom:14px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        <div class="field">
+          <label>Contact name</label>
+          <input type="text" id="contact-name" placeholder="e.g. Amma, Appa" style="width:100%" />
+        </div>
+        <div class="field">
+          <label>Relation</label>
+          <select id="contact-relation" style="width:100%; padding:9px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:14px; background:#f8fafc; color:#1a1a2e; outline:none;">
+            <option value="">Select relation</option>
+            <option>Father</option><option>Mother</option>
+            <option>Spouse</option><option>Sibling</option>
+            <option>Friend</option><option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Phone number</label>
+          <input type="tel" id="contact-phone" placeholder="+91 99999 99999" style="width:100%" />
+        </div>
+        <div class="field">
+          <label>Alternate phone (optional)</label>
+          <input type="tel" id="contact-phone2" placeholder="+91 99999 99999" style="width:100%" />
+        </div>
+      </div>
+      <button class="btn-primary" style="margin-top:8px;" onclick="addContact()">Add contact</button>
+      <p id="contact-msg" class="msg"></p>
+    </div>
+
+    <!-- Contacts list -->
+    <div id="contacts-list"></div>
+  </section>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script type="module">
+    import { onAuthChange, logoutUser, supabase } from "./supabase.js";
+
+    let currentUser = null;
+
+    onAuthChange(async user => {
+      if (!user) { window.location.href = "index.html"; return; }
+      currentUser = user;
+      await loadMedicalInfo();
+      await loadContacts();
+      showQRCode();
+    });
+
+    window.handleLogout = async () => {
+      await logoutUser();
+      window.location.href = "index.html";
+    };
+
+    // ── QR Code ──────────────────────────────────────────
+    function showQRCode() {
+      const publicURL = `${window.location.origin}/emergency-public.html?uid=${currentUser.id}`;
+      document.getElementById("public-url").textContent = publicURL;
+      document.getElementById("qr-banner").style.display = "flex";
+      new QRCode(document.getElementById("qr-code"), {
+        text: publicURL, width: 80, height: 80
+      });
+    }
+
+    // ── Medical Info ──────────────────────────────────────
+    window.saveMedicalInfo = async () => {
+      const msg = document.getElementById("medical-msg");
+      const data = {
+        user_id:    currentUser.id,
+        blood_group: document.getElementById("blood-group").value,
+        age:         document.getElementById("age").value,
+        allergies:   document.getElementById("allergies").value,
+        conditions:  document.getElementById("conditions").value,
+        medications: document.getElementById("medications").value,
+      };
+      try {
+        msg.textContent = "Saving..."; msg.className = "msg";
+        const { error } = await supabase.from("medical_info").upsert(data);
+        if (error) throw error;
+        msg.textContent = "Saved successfully!"; msg.className = "msg success";
+        await loadMedicalInfo();
+      } catch(e) {
+        msg.textContent = "Error: " + e.message; msg.className = "msg error";
+      }
+    };
+
+    async function loadMedicalInfo() {
+      const { data } = await supabase
+        .from("medical_info").select("*")
+        .eq("user_id", currentUser.id).single();
+      if (!data) return;
+      document.getElementById("blood-group").value = data.blood_group || "";
+      document.getElementById("age").value         = data.age || "";
+      document.getElementById("allergies").value   = data.allergies || "";
+      document.getElementById("conditions").value  = data.conditions || "";
+      document.getElementById("medications").value = data.medications || "";
+      document.getElementById("m-blood").textContent = data.blood_group || "—";
+      const condList = data.conditions ? data.conditions.split(",").filter(c => c.trim() !== "None").length : 0;
+      document.getElementById("m-conditions").textContent = condList;
+    }
+
+    // ── Emergency Contacts ────────────────────────────────
+    window.addContact = async () => {
+      const msg = document.getElementById("contact-msg");
+      const name   = document.getElementById("contact-name").value.trim();
+      const phone  = document.getElementById("contact-phone").value.trim();
+      const relation = document.getElementById("contact-relation").value;
+      const phone2 = document.getElementById("contact-phone2").value.trim();
+      if (!name || !phone || !relation) {
+        msg.textContent = "Please fill in name, relation and phone.";
+        msg.className = "msg error"; return;
+      }
+      try {
+        msg.textContent = "Saving..."; msg.className = "msg";
+        const { error } = await supabase.from("emergency_contacts").insert({
+          user_id: currentUser.id, name, relation, phone, phone2
+        });
+        if (error) throw error;
+        msg.textContent = "Contact added!"; msg.className = "msg success";
+        document.getElementById("contact-name").value   = "";
+        document.getElementById("contact-phone").value  = "";
+        document.getElementById("contact-phone2").value = "";
+        document.getElementById("contact-relation").value = "";
+        await loadContacts();
+      } catch(e) {
+        msg.textContent = "Error: " + e.message; msg.className = "msg error";
+      }
+    };
+
+    window.deleteContact = async (id) => {
+      if (!confirm("Remove this contact?")) return;
+      await supabase.from("emergency_contacts").delete().eq("id", id);
+      await loadContacts();
+    };
+
+    async function loadContacts() {
+      const { data } = await supabase
+        .from("emergency_contacts").select("*")
+        .eq("user_id", currentUser.id)
+        .order("created_at", { ascending: true });
+      const list = document.getElementById("contacts-list");
+      document.getElementById("m-contacts").textContent = data ? data.length : 0;
+      if (!data || data.length === 0) {
+        list.innerHTML = "<p class='empty-msg'>No emergency contacts added yet.</p>"; return;
+      }
+      list.innerHTML = data.map(c => `
+        <div class="doc-card" style="margin-bottom:10px;">
+          <div class="doc-card-top">
+            <span class="doc-type">${c.name}</span>
+            <span class="badge badge-valid">${c.relation}</span>
+          </div>
+          <div class="doc-filename">📞 ${c.phone}</div>
+          ${c.phone2 ? `<div class="doc-filename">📞 ${c.phone2}</div>` : ""}
+          <div class="doc-actions">
+            <button class="btn-danger small" onclick="deleteContact('${c.id}')">Remove</button>
+          </div>
+        </div>`).join("");
+    }
+  </script>
+</body>
+</html>
