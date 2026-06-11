@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RYDEX — Emergency Info</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { background:#0A0A0F; max-width:480px; margin:0 auto; padding:1.25rem; }
+    .sos-header { background:var(--red); color:#fff; text-align:center; padding:1.5rem; border-radius:12px; margin-bottom:1.5rem; }
+    .sos-header h1 { font-family:'Rajdhani',sans-serif; font-size:24px; font-weight:700; margin-bottom:4px; letter-spacing:0.1em; }
+    .blood-badge { background:rgba(232,25,44,0.15); color:var(--red); font-family:'Rajdhani',sans-serif; font-size:32px; font-weight:700; padding:12px 28px; border-radius:10px; border:1px solid var(--border-red); display:inline-block; margin:8px 0; }
+    .call-btn { display:block; background:var(--red); color:#fff; text-align:center; padding:14px; border-radius:10px; font-size:15px; font-weight:600; text-decoration:none; margin-bottom:10px; font-family:'Rajdhani',sans-serif; letter-spacing:0.05em; }
+    .call-btn.alt { background:var(--blue); }
+  </style>
+</head>
+<body>
+  <div class="sos-header">
+    <h1>🚨 EMERGENCY INFO</h1>
+    <p style="font-size:13px; opacity:0.9;">RYDEX — Rider medical information for first responders</p>
+  </div>
+  <div id="loading" style="text-align:center; color:var(--text-muted); padding:2rem;">Loading rider information...</div>
+  <div id="content" style="display:none;">
+    <div class="panel" style="text-align:center; margin-bottom:14px;">
+      <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">Blood Group</div>
+      <div class="blood-badge" id="pub-blood">—</div>
+    </div>
+    <div class="panel" style="margin-bottom:14px;">
+      <div style="font-size:13px; font-weight:600; color:var(--text); margin-bottom:10px;">Medical Details</div>
+      <div class="info-row"><span class="info-label">Age</span><span class="info-value" id="pub-age">—</span></div>
+      <div class="info-row"><span class="info-label">Allergies</span><span class="info-value" id="pub-allergies">—</span></div>
+      <div class="info-row"><span class="info-label">Conditions</span><span class="info-value" id="pub-conditions">—</span></div>
+      <div class="info-row"><span class="info-label">Medications</span><span class="info-value" id="pub-medications">—</span></div>
+    </div>
+    <div class="panel">
+      <div style="font-size:13px; font-weight:600; color:var(--text); margin-bottom:10px;">Emergency Contacts</div>
+      <div id="pub-contacts"></div>
+    </div>
+    <div style="text-align:center; font-size:11px; color:var(--text-dim); margin-top:1rem;">Powered by RYDEX Smart Ride Safety Platform</div>
+  </div>
+  <script type="module">
+    import { supabase } from "./supabase.js";
+    const uid = new URLSearchParams(window.location.search).get("uid");
+    if (!uid) { document.getElementById("loading").textContent = "Invalid emergency link."; }
+    else { loadEmergencyInfo(uid); }
+    async function loadEmergencyInfo(userId) {
+      try {
+        const [{ data: med }, { data: contacts }] = await Promise.all([
+          supabase.from("medical_info").select("*").eq("user_id", userId).single(),
+          supabase.from("emergency_contacts").select("*").eq("user_id", userId).order("created_at")
+        ]);
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("content").style.display = "block";
+        if (med) {
+          document.getElementById("pub-blood").textContent      = med.blood_group || "Unknown";
+          document.getElementById("pub-age").textContent        = med.age ? med.age + " years" : "—";
+          document.getElementById("pub-allergies").textContent  = med.allergies  || "None";
+          document.getElementById("pub-conditions").textContent = med.conditions || "None";
+          document.getElementById("pub-medications").textContent= med.medications|| "None";
+        }
+        if (contacts && contacts.length > 0) {
+          document.getElementById("pub-contacts").innerHTML = contacts.map(c => `
+            <a href="tel:${c.phone}" class="call-btn">📞 Call ${c.name} (${c.relation}) — ${c.phone}</a>
+            ${c.phone2 ? `<a href="tel:${c.phone2}" class="call-btn alt">📞 Alternate — ${c.phone2}</a>` : ""}`).join("");
+        } else {
+          document.getElementById("pub-contacts").innerHTML = "<p style='color:var(--text-dim); font-size:13px;'>No contacts saved</p>";
+        }
+      } catch(e) { document.getElementById("loading").textContent = "Could not load emergency info."; }
+    }
+  </script>
+</body>
+</html>

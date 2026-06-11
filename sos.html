@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RYDEX — SOS Alert</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="sos-page">
+  <div class="sos-card">
+    <div class="sos-pulse">🚨</div>
+    <div class="sos-title">ACCIDENT DETECTED</div>
+    <div class="sos-subtitle">An impact was detected on your vehicle. SOS alert will be sent automatically.</div>
+
+    <div class="sos-timer" id="sos-timer">1:30</div>
+    <div class="sos-timer-label">Cancel within this time to stop the alert</div>
+
+    <div class="sos-progress">
+      <div class="sos-progress-bar" id="sos-bar" style="width:100%;"></div>
+    </div>
+
+    <div class="sos-info" id="sos-info">
+      <strong style="color:#F0F0F5;">Alert will be sent to:</strong><br>
+      📞 Your emergency contacts<br>
+      🏥 Nearby hospitals<br>
+      👮 Nearby police stations<br><br>
+      <strong style="color:#F0F0F5;">Includes:</strong><br>
+      📍 Your live GPS location<br>
+      🩸 Blood group & medical info<br>
+      🏍️ Vehicle details
+    </div>
+
+    <button class="btn-cancel-sos" id="cancel-btn" onclick="cancelSOS()">✅ I AM SAFE — CANCEL SOS</button>
+    <button class="btn-send-now" onclick="sendSOSnow()">🆘 SEND SOS NOW</button>
+  </div>
+
+  <!-- SENT screen -->
+  <div id="sos-sent" style="display:none; position:fixed; inset:0; background:rgba(10,10,15,0.97); display:none; align-items:center; justify-content:center; flex-direction:column; gap:1rem; text-align:center; padding:2rem;">
+    <div style="font-size:60px;">🆘</div>
+    <div style="font-family:'Rajdhani',sans-serif; font-size:28px; font-weight:700; color:var(--red);">SOS SENT</div>
+    <div style="font-size:14px; color:var(--text-muted); max-width:320px;">Your location and emergency info have been sent to your contacts, nearby hospitals and police stations.</div>
+    <div id="sent-location" style="font-size:12px; color:var(--text-dim); margin-top:8px;"></div>
+    <a href="dashboard.html" class="btn-outline" style="margin-top:1rem;">← Back to Dashboard</a>
+  </div>
+
+  <!-- CANCELLED screen -->
+  <div id="sos-cancelled" style="display:none; position:fixed; inset:0; background:rgba(10,10,15,0.97); align-items:center; justify-content:center; flex-direction:column; gap:1rem; text-align:center; padding:2rem;">
+    <div style="font-size:60px;">✅</div>
+    <div style="font-family:'Rajdhani',sans-serif; font-size:28px; font-weight:700; color:var(--green);">SOS CANCELLED</div>
+    <div style="font-size:14px; color:var(--text-muted);">No alert was sent. Stay safe on the road!</div>
+    <a href="dashboard.html" class="btn-outline" style="margin-top:1rem;">← Back to Dashboard</a>
+  </div>
+
+<script type="module">
+import { onAuthChange, supabase } from "./supabase.js";
+
+const TOTAL = 90; // 1 min 30 sec
+let remaining = TOTAL;
+let interval = null;
+let cancelled = false;
+let userInfo = null;
+let location = null;
+
+// Get location immediately
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(pos => {
+    location = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+  }, () => {});
+}
+
+onAuthChange(async user => {
+  if (!user) { window.location.href = "index.html"; return; }
+  // Load user info for SOS email
+  const [{ data: profile }, { data: medical }, { data: contacts }, { data: vehicles }] = await Promise.all([
+    supabase.from("profiles").select("*").eq("user_id", user.id).single(),
+    supabase.from("medical_info").select("*").eq("user_id", user.id).single(),
+    supabase.from("emergency_contacts").select("*").eq("user_id", user.id),
+    supabase.from("vehicles").select("*").eq("user_id", user.id)
+  ]);
+  userInfo = { email: user.email, profile, medical, contacts, vehicles };
+  startTimer();
+});
+
+function startTimer() {
+  interval = setInterval(() => {
+    if (cancelled) return;
+    remaining--;
+    updateDisplay();
+    if (remaining <= 0) { clearInterval(interval); sendSOS(); }
+  }, 1000);
+}
+
+function updateDisplay() {
+  const mins = Math.floor(remaining / 60);
+  const secs = remaining % 60;
+  const timerEl = document.getElementById("sos-timer");
+  timerEl.textContent = `${mins}:${secs.toString().padStart(2, "0")}`;
+  if (remaining <= 30) timerEl.classList.add("urgent");
+  document.getElementById("sos-bar").style.width = (remaining / TOTAL * 100) + "%";
+}
+
+window.cancelSOS = () => {
+  cancelled = true;
+  clearInterval(interval);
+  document.querySelector(".sos-card").style.display = "none";
+  const el = document.getElementById("sos-cancelled");
+  el.style.display = "flex";
+};
+
+window.sendSOSnow = () => {
+  cancelled = false;
+  clearInterval(interval);
+  sendSOS();
+};
+
+async function sendSOS() {
+  if (cancelled) return;
+  document.querySelector(".sos-card").style.display = "none";
+  const sentEl = document.getElementById("sos-sent");
+  sentEl.style.display = "flex";
+
+  const mapsLink = location
+    ? `https://maps.google.com/?q=${location.lat},${location.lng}`
+    : "Location unavailable";
+
+  if (location) {
+    document.getElementById("sent-location").textContent = `📍 Location: ${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`;
+  }
+
+  // Build SOS email content
+  const p = userInfo?.profile;
+  const m = userInfo?.medical;
+  const v = userInfo?.vehicles?.[0];
+  const contacts = userInfo?.contacts || [];
+
+  const html = `
+    <div style="font-family:sans-serif; max-width:520px; margin:0 auto;">
+      <div style="background:#E8192C; color:#fff; padding:20px; border-radius:10px 10px 0 0; text-align:center;">
+        <h1 style="margin:0; font-size:24px; letter-spacing:0.1em;">🆘 RYDEX SOS ALERT</h1>
+        <p style="margin:6px 0 0; opacity:0.9; font-size:13px;">Accident detected — Immediate assistance required</p>
+      </div>
+      <div style="background:#fff; border:1px solid #e2e8f0; border-top:none; padding:20px; border-radius:0 0 10px 10px;">
+        <h2 style="color:#E8192C; font-size:16px; margin-bottom:12px;">Rider Information</h2>
+        <table style="width:100%; border-collapse:collapse; margin-bottom:16px;">
+          <tr><td style="padding:6px 0; color:#64748b; font-size:13px; width:40%;">Name</td><td style="color:#1a1a2e; font-weight:500;">${p?.full_name || userInfo?.email || "Unknown"}</td></tr>
+          <tr><td style="padding:6px 0; color:#64748b; font-size:13px;">Phone</td><td style="color:#1a1a2e; font-weight:500;">${p?.phone || "—"}</td></tr>
+          <tr><td style="padding:6px 0; color:#64748b; font-size:13px;">Blood Group</td><td style="color:#E8192C; font-weight:700; font-size:16px;">${m?.blood_group || "Unknown"}</td></tr>
+          <tr><td style="padding:6px 0; color:#64748b; font-size:13px;">Age</td><td style="color:#1a1a2e; font-weight:500;">${m?.age || "—"}</td></tr>
+          <tr><td style="padding:6px 0; color:#64748b; font-size:13px;">Allergies</td><td style="color:#1a1a2e; font-weight:500;">${m?.allergies || "None"}</td></tr>
+          <tr><td style="padding:6px 0; color:#64748b; font-size:13px;">Conditions</td><td style="color:#1a1a2e; font-weight:500;">${m?.conditions || "None"}</td></tr>
+          <tr><td style="padding:6px 0; color:#64748b; font-size:13px;">Medications</td><td style="color:#1a1a2e; font-weight:500;">${m?.medications || "None"}</td></tr>
+        </table>
+        ${v ? `<h2 style="color:#E8192C; font-size:16px; margin-bottom:12px;">Vehicle</h2>
+        <table style="width:100%; border-collapse:collapse; margin-bottom:16px;">
+          <tr><td style="padding:6px 0; color:#64748b; font-size:13px; width:40%;">Vehicle</td><td style="color:#1a1a2e; font-weight:500;">${v.name} — ${v.model || ""}</td></tr>
+          <tr><td style="padding:6px 0; color:#64748b; font-size:13px;">Registration</td><td style="color:#1a1a2e; font-weight:500; font-family:monospace;">${v.reg_number}</td></tr>
+          <tr><td style="padding:6px 0; color:#64748b; font-size:13px;">Color</td><td style="color:#1a1a2e; font-weight:500;">${v.color || "—"}</td></tr>
+        </table>` : ""}
+        <h2 style="color:#E8192C; font-size:16px; margin-bottom:12px;">📍 Location</h2>
+        <a href="${mapsLink}" style="display:inline-block; background:#E8192C; color:#fff; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:600; margin-bottom:16px;">Open in Google Maps</a>
+        <p style="color:#64748b; font-size:12px;">Coordinates: ${location ? `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}` : "Unavailable"}</p>
+        ${contacts.length > 0 ? `<h2 style="color:#E8192C; font-size:16px; margin:16px 0 12px;">Emergency Contacts</h2>` + contacts.map(c => `<p style="color:#1a1a2e; margin:4px 0;">${c.name} (${c.relation}): <strong>${c.phone}</strong>${c.phone2 ? ` / ${c.phone2}` : ""}</p>`).join("") : ""}
+        <hr style="margin:20px 0; border:none; border-top:1px solid #e2e8f0;" />
+        <p style="color:#94a3b8; font-size:11px; text-align:center;">Sent by RYDEX Smart Ride Safety Platform · ${new Date().toLocaleString()}</p>
+      </div>
+    </div>`;
+
+  // Send via Supabase edge function
+  try {
+    const toEmails = contacts.map(c => c.phone).filter(Boolean); // In production use email
+    toEmails.push(userInfo.email);
+    await fetch(`https://osfaasjrlsonobiyuuvu.supabase.co/functions/v1/send-sos`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zZmFhc2pybHNvbm9iaXl1dXZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3MzA1MDQsImV4cCI6MjA5NjMwNjUwNH0.g2cmvxD4jOV0fy3llKZEYCcbMX1sNNSLFHT45Va27-0` },
+      body: JSON.stringify({ html, to: userInfo.email, location, riderName: p?.full_name || userInfo.email })
+    });
+  } catch(e) { console.error("SOS send error:", e); }
+}
+</script>
+</body>
+</html>
